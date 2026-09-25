@@ -1,0 +1,38 @@
+name: Contribution Invaders
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # atualiza a cada 12 horas
+  workflow_dispatch:          # permite rodar na mão pela aba Actions
+  push:
+    branches: [main]
+    paths:
+      - "scripts/invaders.py"
+      - ".github/workflows/invaders.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gerar o SVG
+        run: python3 scripts/invaders.py --user "${{ github.repository_owner }}" --out dist/invaders.svg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publicar na branch output
+        run: |
+          cd dist
+          git init -q -b output
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add invaders.svg
+          git commit -qm "Atualiza Contribution Invaders"
+          git push -qf "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" output
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
